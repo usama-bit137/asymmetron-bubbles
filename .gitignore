@@ -1,4 +1,4 @@
 a.out
-index.cpp
+*.cpp
 .ipynb_checkpoints
 *nb.
