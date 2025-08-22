@@ -9,12 +9,16 @@ fig2, ax3 = plt.subplots(1)
 fig3, ax4 = plt.subplots(1)
 fig4, ax5 = plt.subplots(1)
 fig5, (ax2, ax6) = plt.subplots(2, 1)
+fig6, ax7 = plt.subplots(1)
 
 def V(chi, k, rho):
     return -0.5*(1-rho)*chi**2 + (chi**4)/4 -(k/3)*(chi**3)
 
 def V_der(chi, k, rho): 
     return -(1-rho)*chi + chi**3 - k*chi**2
+
+def V_der_2(chi, k, rho): 
+    return -(1-rho) + 3*chi**2 - 2*k*chi
 
 # ODE Solution:
 def ODE(x, v, t, k, rho):
@@ -23,7 +27,7 @@ def ODE(x, v, t, k, rho):
 # line showing the size of the seed and Compton wavelength.
 def RK_22(x0, chi, k, rho, t_s):
     
-    t_range = t_s + 20
+    t_range = t_s + 50
     x_range = abs(chi)+0.01
     dt = 0.001
     t0 = 1e-15
@@ -69,19 +73,20 @@ def IntBisec(a_u, a_o, chi, t_s, rho, k, N):
         
     return Phi_mid
 
-def sigma_difference(kappa, rho, r_s): 
-    def gamma(rho, r_s): 
-        return 1/(np.cosh(np.sqrt(rho/2)*r_s) + np.sqrt(rho/2)*np.sinh(np.sqrt(rho/2)*r_s))
-    
-    return  3*rho*kappa*(gamma(rho, t_s)**2/np.sqrt(2))*(np.sinh(np.sqrt(rho/2)*r_s)-r_s/(2*np.sqrt(2)))/(np.cosh(np.sqrt(rho/2)*r_s))**2 + (kappa/4)*(gamma(rho, r_s)-1)**2 
+def mu(kappa, chi): 
+    return np.sqrt(1 + (kappa/2)**2  + np.sign(chi)*(kappa/2)*np.sqrt(1+kappa**2/4))
 
-N = 30
+
+def sigma(chi, rho, kappa): 
+    return (rho/(2*np.sqrt(2)))*chi**2*mu(kappa, chi)/((mu(kappa, chi)+np.sqrt(rho/2))**2)
+
+N = 50
 
 def sampler(x): 
     # linspace sampler
     return x**2
 
-t_s = sampler(np.linspace(0, np.sqrt(10), N))
+t_s = sampler(np.linspace(0, np.sqrt(5), N))
 
 sigma_true = np.ones(N)
 sigma_false = np.ones(N)
@@ -93,6 +98,7 @@ rho = 10
 
 chi_false = np.float128((k/2 - np.sqrt(k**2/4 + 1)))
 chi_true = np.float128((k/2 + np.sqrt(k**2/4 + 1)))
+
 a_u = 0
 a_o = chi_true
     
@@ -114,13 +120,13 @@ for i in range(len(t_s)):
     
     seed_index = int(t_s[i]*1000)
 
-    ax1.plot(t_cut, x_cut, label="$r_s=$" + str(round(t_s[i], 3))+ "$\lambda_0$")
-    ax2.plot(t_cut[0:seed_index], (v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho) - V(0, k, rho), label="$\kappa=$" + str(round(k, 3))+"$\lambda$")
+    ax1.plot(t, x, label="$R_s=$" + str(round(t_s[i], 3))+ "$\lambda_0$")
+    ax2.plot(t_cut[0:seed_index], (v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho), label="$\kappa=$" + str(round(k, 3))+"$\lambda$")
     ax2.plot(t_cut[seed_index:], (v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_true, k, 0))
 
     dt = abs(t_cut[1]-t_cut[0])
-    sigma_true[i] = trapezoid((v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho), dx = dt) + trapezoid((v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_true, k, 0), dx = dt)
-
+     
+    sigma_true[i] = trapezoid(0.5*(v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho) , dx = dt) + trapezoid((v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_true, k, 0), dx = dt)
 
 a_o = chi_false
 
@@ -141,29 +147,32 @@ for i in range(len(t_s)):
     x_cut = x[0:max_index]
     v_cut = v[0:max_index]
 
-    ax5.plot(t_cut, x_cut, label="$r_s=$" + str(round(t_s[i], 3))+ "$\lambda_0$")
+    ax5.plot(t, x, label="$R_s=$" + str(round(t_s[i], 3))+ "$\lambda_0$")
     
     seed_index = int(t_s[i]*1000)
-    ax6.plot(t_cut[0:seed_index], (v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho) - V(0, k, rho),  
+    ax6.plot(t_cut[0:seed_index], (v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho),  
              label="$\kappa=$" + str(round(k, 3)) + "$\lambda$")
     
     ax6.plot(t_cut[seed_index:], (v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_false, k, 0))
     
     dt = abs(t_cut[1]-t_cut[0])
-    sigma_false[i] = trapezoid(((v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho)), dx = dt) + trapezoid(((v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_false, k, 0)), dx = dt)
+    sigma_false[i] = trapezoid(0.5*(v_cut[0:seed_index])**2 + V(x_cut[0:seed_index], k, rho), dx = dt) + trapezoid(((v_cut[seed_index:])**2 + V(x_cut[seed_index:], k, 0) - V(chi_false, k, 0)), dx = dt)
+    #ax7.plot(t_cut[0:seed_index], V_der_2(x_cut[0:seed_index], k, rho))
+    ax7.plot(t_cut[seed_index:], V_der_2(x_cut[seed_index:], k, 0),label="$R_s=$" + str(round(t_s[i], 3))+ "$\lambda_0$")
 
+ax7.set_xlabel("$r/\lambda_0$")
+ax7.set_ylabel(r"$V_\text{eff}''(\phi)$")
+ax7.legend(loc='lower right', fontsize=15)
 
-ax4.plot(t_s, sigma_true, linestyle="dashed", color="k", label="$\sigma_+$")
-ax4.plot(t_s, sigma_false, color="blue", label="$\sigma_-$")
-ax4.plot(t_s, (sigma_true-sigma_false), color="red", label="$\Delta \sigma$")
-ax4.plot(t_s, sigma_difference(k, rho, t_s), color="orange", linestyle="solid", label="$\Delta \sigma$ analytical")
-ax4.set_xlabel(r"$\frac{r_s}{\lambda_0}$", fontsize=25)
+#ax4.axhline(sigma(chi_true, rho, k) - sigma(chi_false, rho, k) , linestyle="dashed", color="k", label="analytic asymptotics")
+ax4.plot(t_s, (sigma_true-sigma_false), color="red", label="$[\sigma]$")
+ax4.axhline(15*k/4, color="red", label="$[\sigma]$")
+ax4.set_xlabel(r"$\frac{R_s}{\lambda_0}$", fontsize=25)
 ax4.set_ylabel(r"$\frac{\sigma}{\sigma_w}$", fontsize=25, rotation=0, ha="right")
-ax4.legend(loc='center right', fontsize=15)
+ax4.legend(loc='lower right', fontsize=15)
 ax4.tick_params(axis='both', which='major', labelsize=15)
 ax4.tick_params(axis='both', which='minor', labelsize=15)
-ax4.axhline(k, linestyle="dotted", color="purple")
-#ax4.set_yscale("log")
+#ax4.axhline(3*np.sqrt(2)*k/4, linestyle="dotted", color="purple")
 
 ax1.set_ylabel("$\phi/\phi_0$", fontsize=20)
 ax1.set_xlabel("$r/\lambda_0$", fontsize=20)
