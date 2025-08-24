@@ -11,6 +11,13 @@ fig4, ax5 = plt.subplots(1)
 fig5, (ax2, ax6) = plt.subplots(2, 1)
 fig6, ax7 = plt.subplots(1)
 
+# Use LaTeX for all text
+plt.rcParams.update({
+    "text.usetex": False,              # don't use external LaTeX
+    "mathtext.fontset": "cm",          # use Computer Modern
+    "font.family": "serif",            # serif text
+})
+
 def V(chi, k, rho):
     return -0.5*(1-rho)*chi**2 + (chi**4)/4 -(k/3)*(chi**3)
 
