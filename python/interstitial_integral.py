@@ -1,8 +1,13 @@
 from scipy.integrate import trapezoid
 import numpy as np
 import matplotlib.pyplot as plt
-import mpltex
 
+# Use LaTeX for all text
+plt.rcParams.update({
+    "text.usetex": False,              # don't use external LaTeX
+    "mathtext.fontset": "cm",          # use Computer Modern
+    "font.family": "serif",            # serif text
+})
 
 fig1, ax1 = plt.subplots(1)
 
@@ -32,9 +37,24 @@ def Gamma(B, D):
 
 theta = [
     {
+        "value" : np.pi/8, 
+        "name": r"$ \frac{\pi}{8}$",
+        "linestyle": "dashed"
+    }, 
+    {
+        "value" : np.pi/4, 
+        "name": r"$ \frac{\pi}{4}$",
+        "linestyle": "dashdot"
+    },
+    {
         "value" : np.pi/2, 
         "name": r"$ \frac{\pi}{2}$",
         "linestyle": "solid"
+    },
+    {
+        "value" : np.pi, 
+        "name": r"$ \pi$",
+        "linestyle": "dotted"
     }
     ]
 """
@@ -80,18 +100,24 @@ def function():
             ax1.plot(r_s, B_trap/B_0, label= "(Engulfing)", linestyle = theta[j]["linestyle"])
             ax1.plot(r_s, Moss_action(D, "+", theta[j]["value"], r_s), label="(Edge - Convex)", linestyle = "dotted")
             ax1.plot(r_s, Moss_action(D, "-", theta[j]["value"], r_s), label= "(Edge - Concave)", linestyle = "dashdot")
-            ax1.legend(loc='upper right', fontsize=25)
+            ax1.legend(loc='upper right', fontsize=15)
         else:
             ax1.plot(r_s, B_trap/B_0, label= r"$ \beta $ = " + theta[j]["name"], linestyle = theta[j]["linestyle"])
-            ax1.legend(loc='upper left', fontsize=25)
+            ax1.legend(loc='upper left', fontsize=15)
         
         ax1.set_ylim(0, 2.5)
-        ax1.set_ylabel(r"$\frac{B}{B_b}$", fontsize=30, rotation=0, ha="right")
-        ax1.set_xlabel(r"$\frac{R_s}{R_0}$", fontsize = 30)
-        ax1.tick_params(axis='both', which='major', labelsize=25)
-        ax1.tick_params(axis='both', which='minor', labelsize=25)
+        ax1.set_ylabel(r"$\frac{B}{B_0}$", fontsize=15, rotation=0, ha="right")
+        ax1.set_xlabel(r"$\frac{R_s}{R_0}$", fontsize = 15)
+        ax1.tick_params(axis='both', which='major', labelsize=15)
+        ax1.tick_params(axis='both', which='minor', labelsize=15)
         ax1.set_xscale("log")
 
 function()
 
+plt.tight_layout()
+
+if len(theta) == 1:
+    plt.savefig("crossover.pdf", bbox_inches="tight")
+else: 
+    plt.savefig("actionD3.pdf", bbox_inches="tight")
 plt.show()
