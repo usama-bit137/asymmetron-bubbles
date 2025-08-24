@@ -2,5 +2,7 @@ a.out
 *.cpp
 .ipynb_checkpoints
 *.nb
-
 *.pdf
+
+figures/
+__pycache__
